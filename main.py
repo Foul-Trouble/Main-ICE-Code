@@ -4,20 +4,32 @@
 
 from handlers import *
 from bot_gui import *
+from visuals import *
 
 from Phidget22.Devices.LCD import *
 
 import time
+from datetime import datetime
 
 import threading
 
-#import evdev
-#from evdev import InputDevice, categorize, ecodes
+import platform
+if platform.system() == "Linux":
+    import evdev
+    from evdev import InputDevice, categorize, ecodes
 
 global timer
 global runtime
 global end
 global lcd6
+
+global end
+global connected
+global ICE
+
+log = open("log.txt", "a")
+now = datetime.now()
+log.write(f"Program Start at {now}\n")
 
 
 def controller():
@@ -26,7 +38,6 @@ def controller():
     while not end:
         acceptable_controllers = ["Playstation", "Dual Action"]
         arcade = InputDevice('/dev/input/event0')
-
         input_list = []
         devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
         for device in devices:
@@ -67,17 +78,21 @@ def controller():
 
 
 def robot():
-    ICE = False
+    global ICE
     while not end:
         if not ICE:
             try:
                 thruster_connect()
                 robot_sensors_connect()
-                #    threading.Thread(name='Cameras', target=cameras).start()
+                try:
+                    threading.Thread(name='Cameras', target=cameras).start()
+                except:
+                    print("Cameras not functioning or connected")
                 ICE = True
             except Exception:
                 print("Robot not Found")
                 ICE = False
+
 
 class Controllers:
 
@@ -86,6 +101,7 @@ class Controllers:
 
     @staticmethod
     def playstation_joystick_controller():
+        log.write("Connected Playstation Controller\n")
         #   Playstation Joystick Controller
         x = 0
         y = 0
@@ -265,10 +281,12 @@ class Controllers:
                             print(value)
                 rov_movement(direction_mode, speed_mode, x, y, z, twist)
         except Exception:
+            log.write("Disconnected Playstation Controller\n")
             print("Controller Disconnected")
 
     @staticmethod
     def logitech_controller():
+        log.write("Connected Logitech Controller\n")
         #   Logitech Controller
         x = 0
         y = 0
@@ -433,6 +451,7 @@ class Controllers:
                             print(value)
                 rov_movement(direction_mode, speed_mode, x, y, z, twist)
         except Exception:
+            log.write("Disconnected Logitech Controller\n")
             print("Controller Disconnected")
 
 
@@ -557,6 +576,13 @@ def rov_movement(direction_mode, speed_mode, x, y, z, twist):
         rcServo2.setEngaged(True)
         rcServo3.setEngaged(True)
 
+    thruster_power_data = [H0, H1, H2, H3, heave_move]
+    ax.clear()
+    ax.patch.set_facecolor("black")
+    ax.set_xlim([-0.5, len(thruster_power_data) - 0.5])
+    ax.bar(range(len(thruster_power_data)), thruster_power_data)
+    canvas.draw()
+
     else:
         print("Direction mode not set")
 
@@ -597,20 +623,32 @@ def main():
     end = False
     connected = False
     ICE = False
-    try:
-        connect()
-        connected = True
+    if platform.system() == "Linux":
+        log.write("Connected through Linux\n")
+        try:
+            connect()
+            connected = True
 
-        threading.Thread(name='Timer', target=clock()).start()
+            threading.Thread(name='Timer', target=clock()).start()
 
-        threading.Thread(name='Controllers', target=controller()).start()
+            threading.Thread(name='Controllers', target=controller()).start()
 
-        threading.Thread(name='Robot', target=robot()).start()
-    except:
-        connected = False
-        print("Either running demo or something is seriously wrong...")
+            threading.Thread(name='Robot', target=robot()).start()
 
-    gui()
+            threading.Thread(name='Rov Movement', target=rov_movement()).start()
+
+        except:
+            connected = False
+            ICE = False
+            print("Something is seriously wrong...")
+    elif platform.system() == "Darwin":
+        print("Russell is probably testing the GUI")
+        log.write("Connected through Mac\n")
+    else:
+        print("I see you Windows")
+        log.write("Connected through Windows\n")
+
+    gui(ICE, connected)
 
     print("\n\n\nEnding...\n\n\n")
 
@@ -622,6 +660,9 @@ def main():
         topside_sensors_detach()
         screen_detach()
     print("Program Over")
+    now = datetime.now()
+    log.write(f"Program End at {now}\n\n")
+    log.close()
     exit()
 
 

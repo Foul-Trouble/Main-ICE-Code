@@ -1,4 +1,6 @@
-import cv2
+import platform
+if platform.system() == "Linux":
+    import cv2
 
 
 def cameras():

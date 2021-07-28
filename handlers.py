@@ -85,10 +85,14 @@ def on_robot_current_change(self, voltageRatio):
 
 def on_temperature_sensor_change(self, sensor_value, sensor_unit):
     global lcd2
+    global temperature_data
+    global ax_three
+    global canvas_three
     if "0" in str(self.getChannel()):
-        temperature_data.pop()
+        temperature_data.pop(0)
         temperature_data.append(sensor_value)
         ax_three.clear()
+        ax_three.set_ylim([0, 40])
         ax_three.plot(range(len(temperature_data)), temperature_data)
         canvas_three.draw()
         lcd2.writeText(LCDFont.FONT_5x8, 13, 2, (str(round(sensor_value, 1))) + str(sensor_unit.symbol))
