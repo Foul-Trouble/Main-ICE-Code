@@ -348,7 +348,7 @@ class Controllers:
 
         try:
             for event in arcade.read_loop():
-                if not operation:
+                if not end:
                     break
                 if event.type == ecodes.EV_KEY:
                     if event.value == 1:
@@ -576,15 +576,15 @@ def rov_movement(direction_mode, speed_mode, x, y, z, twist):
         rcServo2.setEngaged(True)
         rcServo3.setEngaged(True)
 
-    thruster_power_data = [H0, H1, H2, H3, heave_move]
-    ax.clear()
-    ax.patch.set_facecolor("black")
-    ax.set_xlim([-0.5, len(thruster_power_data) - 0.5])
-    ax.bar(range(len(thruster_power_data)), thruster_power_data)
-    canvas.draw()
-
     else:
         print("Direction mode not set")
+
+    thruster_power_data = [H0, H1, H2, H3, heave_move]
+    thruster_ax.clear()
+    thruster_ax.patch.set_facecolor("black")
+    thruster_ax.set_xlim([-0.5, len(thruster_power_data) - 0.5])
+    thruster_ax.bar(range(len(thruster_power_data)), thruster_power_data)
+    thruster_canvas.draw()
 
 
 def clock():
@@ -634,8 +634,6 @@ def main():
             threading.Thread(name='Controllers', target=controller()).start()
 
             threading.Thread(name='Robot', target=robot()).start()
-
-            threading.Thread(name='Rov Movement', target=rov_movement()).start()
 
         except:
             connected = False
