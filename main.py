@@ -348,7 +348,7 @@ class Controllers:
 
         try:
             for event in arcade.read_loop():
-                if not end:
+                if end:
                     break
                 if event.type == ecodes.EV_KEY:
                     if event.value == 1:
